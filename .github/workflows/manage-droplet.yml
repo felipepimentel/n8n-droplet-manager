@@ -1,0 +1,38 @@
+name: Manage Droplet
+
+on:
+  issue_comment:
+    types: [created]
+
+jobs:
+  manage:
+    if: github.event.issue.pull_request == null
+    runs-on: ubuntu-latest
+    steps:
+    - name: Check if action is needed
+      id: check_action
+      run: |
+        if [[ "${{ github.event.comment.body }}" == "/shutdown" ]]; then
+          echo "action=shutdown" >> $GITHUB_ENV
+        elif [[ "${{ github.event.comment.body }}" == "/poweron" ]]; then
+          echo "action=poweron" >> $GITHUB_ENV
+        else
+          echo "No valid action detected"
+          exit 1
+        fi
+
+    - name: Execute Action
+      if: env.action == 'shutdown'
+      run: |
+        curl -X POST "https://api.digitalocean.com/v2/droplets/${{ secrets.DO_DROPLET_ID }}/actions" \
+        -d '{"type":"shutdown"}' \
+        -H "Authorization: Bearer ${{ secrets.DO_PAT }}" \
+        -H "Content-Type: application/json"
+
+    - name: Execute Action
+      if: env.action == 'poweron'
+      run: |
+        curl -X POST "https://api.digitalocean.com/v2/droplets/${{ secrets.DO_DROPLET_ID }}/actions" \
+        -d '{"type":"power_on"}' \
+        -H "Authorization: Bearer ${{ secrets.DO_PAT }}" \
+        -H "Content-Type: application/json"

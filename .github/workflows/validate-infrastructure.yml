@@ -1,0 +1,25 @@
+name: Validate Infrastructure
+
+on:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+
+    - name: Setup OpenTofu
+      run: |
+        curl -Lo opentofu https://opentofu.org/install.sh
+        chmod +x opentofu
+        sudo mv opentofu /usr/local/bin/tofu
+
+    - name: Validate OpenTofu Plan
+      env:
+        TF_VAR_do_token: ${{ secrets.TF_VAR_do_token }}
+        TF_VAR_ssh_fingerprint: ${{ secrets.TF_VAR_ssh_fingerprint }}
+      run: tofu plan -var-file=environments/dev/variables.tofu

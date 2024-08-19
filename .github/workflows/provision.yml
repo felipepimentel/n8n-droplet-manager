@@ -1,0 +1,28 @@
+name: Provision Infrastructure
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  provision:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+
+    - name: Setup OpenTofu
+      run: |
+        curl -Lo opentofu https://opentofu.org/install.sh
+        chmod +x opentofu
+        sudo mv opentofu /usr/local/bin/tofu
+
+    - name: Initialize OpenTofu
+      run: tofu init
+
+    - name: Apply OpenTofu configuration
+      env:
+        TF_VAR_do_token: ${{ secrets.TF_VAR_do_token }}
+        TF_VAR_ssh_fingerprint: ${{ secrets.TF_VAR_ssh_fingerprint }}
+      run: tofu apply -auto-approve -var-file=environments/dev/variables.tofu

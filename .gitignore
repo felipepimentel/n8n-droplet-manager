@@ -35,3 +35,13 @@ override.tf.json
 # Ignore CLI configuration files
 .terraformrc
 terraform.rc
+
+# Ignore OpenTofu local state files
+*.tfstate
+*.tfstate.backup
+.terraform/
+
+# Ignore any sensitive files
+*.secret
+
+.terraform.lock.hcl
