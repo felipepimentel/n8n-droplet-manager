@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Checkout code
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
 
     - name: Setup OpenTofu
       run: |
@@ -22,4 +22,7 @@ jobs:
       env:
         TF_VAR_do_token: ${{ secrets.TF_VAR_do_token }}
         TF_VAR_ssh_fingerprint: ${{ secrets.TF_VAR_ssh_fingerprint }}
-      run: tofu plan -var-file=environments/dev/variables.tofu
+      run: |
+        cd environments/dev
+        tofu init
+        tofu plan -var-file=variables.tfvars

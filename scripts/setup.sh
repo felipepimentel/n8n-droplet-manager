@@ -1,22 +1,23 @@
 #!/bin/bash
 
+set -euo pipefail
+
+# Função para instalar dependências
+install_dependency() {
+    if ! command -v "$1" &> /dev/null; then
+        echo "Instalando $1..."
+        sudo apt-get update
+        sudo apt-get install -y "$1"
+    fi
+}
+
 # Verificar e instalar dependências
 echo "Verificando dependências..."
-if ! command -v curl &> /dev/null
-then
-    echo "Instalando curl..."
-    sudo apt-get update
-    sudo apt-get install -y curl
-fi
+install_dependency curl
+install_dependency jq
 
-if ! command -v jq &> /dev/null
-then
-    echo "Instalando jq..."
-    sudo apt-get install -y jq
-fi
-
-if ! command -v gh &> /dev/null
-then
+# Instalar GitHub CLI
+if ! command -v gh &> /dev/null; then
     echo "Instalando GitHub CLI..."
     sudo apt-get install -y software-properties-common
     sudo add-apt-repository -y ppa:git-core/ppa
@@ -25,8 +26,7 @@ then
 fi
 
 # Verificar se já está logado no GitHub CLI
-if ! gh auth status &> /dev/null
-then
+if ! gh auth status &> /dev/null; then
     echo "Configurando GitHub CLI..."
     gh auth login
 else
@@ -35,13 +35,11 @@ fi
 
 # Configurar Secrets no GitHub
 echo "Configurando Secrets no GitHub..."
-gh secret set DO_PAT -b"$DO_PAT"
-gh secret set DO_SSH_KEY_FINGERPRINT -b"$DO_SSH_KEY_FINGERPRINT"
-
+gh secret set DO_PAT -b"${DO_PAT:?DO_PAT is not set}"
+gh secret set DO_SSH_KEY_FINGERPRINT -b"${DO_SSH_KEY_FINGERPRINT:?DO_SSH_KEY_FINGERPRINT is not set}"
 
 # Verificar e instalar OpenTofu
-if ! command -v tofu &> /dev/null
-then
+if ! command -v tofu &> /dev/null; then
     echo "Instalando OpenTofu..."
     curl -Lo opentofu https://opentofu.org/install.sh
     chmod +x opentofu
@@ -52,9 +50,6 @@ fi
 
 # Aplicar OpenTofu
 echo "Inicializando OpenTofu..."
-cd environments/dev
-TF_VAR_do_token="$DO_PAT" tofu init || { echo "Erro ao inicializar o OpenTofu"; exit 1; }
-TF_VAR_do_token="$DO_PAT" tofu apply -auto-approve -var-file=variables.tfvars || { echo "Erro ao aplicar a configuração do OpenTofu"; exit 1; }
-
-tofu init || { echo "Erro ao inicializar o OpenTofu"; exit 1; }
-tofu apply -auto-approve -var-file=variables.tfvars || { echo "Erro ao aplicar a configuração do OpenTofu"; exit 1; }
+cd environments/dev || exit
+TF_VAR_do_token="${DO_PAT}" tofu init
+TF_VAR_do_token="${DO_PAT}" tofu apply -auto-approve -var-file=variables.tfvars
